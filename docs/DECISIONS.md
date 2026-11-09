@@ -47,7 +47,7 @@ One line per decision, with the reason.
 - The staff trade-in card is a server component next to the lead view; it re-checks the role in the DB and the lead access rule, and renders nothing when access is denied.
 
 ### Service booking by bay capacity
-- Capacity is enforced in a SERIALIZABLE transaction (count CONFIRMED bookings for workshop+slot, insert only if count < bays), retried once on serialization failure (P2034) — a slot holds N cars, so there is no unique index to lean on as with test drives; a second failure returns 409 instead of 500.
+- Capacity is enforced in a SERIALIZABLE transaction (count CONFIRMED bookings for workshop+slot, insert only if count < bays), retried up to 6 times with jittered backoff on serialization failure (P2034) — a slot holds N cars, so there is no unique index to lean on as with test drives. A burst of 9 simultaneous requests on a 6-bay slot books exactly 6; persistent contention returns 409, never 500.
 - The public confirmation page shows only non-personal details (no name/phone; registration masked), looked up by `SV-` reference.
 - Admins can only move a CONFIRMED booking to CANCELLED or COMPLETED (conditional update, 409 otherwise) — re-confirming would need a fresh capacity check, so the buyer books again instead.
 
@@ -60,3 +60,10 @@ One line per decision, with the reason.
 ## Portal CSV import & model-aware assignment
 - CSV is parsed with a small in-house RFC 4180 parser (`src/server/services/csv.ts`) rather than a dependency; the file is read client-side and posted as JSON text to `POST /api/leads/import` (ADMIN), with `dryRun: true` for the preview. Each row is created in its own transaction so one bad row never aborts the batch; the `LeadImport` row records counts and per-row skip reasons.
 - `assignLead(tx, leadId, showroomId, modelId?)` gained an optional model id; consultants' `specialtyModelIds` are edited on the Users admin page.
+
+### Missed-SLA escalation
+- Escalation acts on the brief's main metric instead of only displaying it: 5 min uncontacted → reassign to someone else + lead-desk alert; 10 min → second desk alert, no more reassigning (bouncing a lead between people slows the call down).
+- Triggered by inbox polls (throttled, failure-tolerant) so it works with zero infrastructure, plus a CRON_SECRET-guarded route for a real scheduler. Each lead is claimed with a conditional `updateMany` on its current level, so overlapping sweeps never double-escalate.
+
+### AI quality page
+- Quality is measured from data already stored per draft (attempts, status/reason, sent text) — no extra tracking or AI calls. Edit size is word-level edit distance, which is explainable to a sales manager ("a quarter of the words changed").
