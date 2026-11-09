@@ -9,6 +9,7 @@ import {
   SparklesIcon,
   StickyNoteIcon,
   UserCheckIcon,
+  SirenIcon,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { LeadDetail } from "@/types/contracts";
@@ -18,6 +19,7 @@ const ICON: Record<string, LucideIcon> = {
   CREATED: PlusCircleIcon,
   ASSIGNED: UserCheckIcon,
   REASSIGNED: ArrowRightLeftIcon,
+  ESCALATED: SirenIcon,
   STATUS_CHANGED: CircleDotIcon,
   CONTACTED: PhoneCallIcon,
   NOTE: StickyNoteIcon,

@@ -42,6 +42,7 @@ const listSelect = {
   interestVariant: { select: { name: true, model: { select: { name: true } } } },
   interestUsedCar: { select: { stockId: true, modelName: true } },
   portalName: true,
+  escalationLevel: true,
 } satisfies Prisma.LeadSelect;
 
 type ListRow = Prisma.LeadGetPayload<{ select: typeof listSelect }>;
@@ -68,6 +69,7 @@ function toListItem(l: ListRow, now: Date): LeadListItem {
     sla: slaState(l.createdAt, l.firstContactAt, now),
     optedOut: l.optedOut,
     portalName: l.portalName ?? null,
+    escalationLevel: l.escalationLevel,
   };
 }
 

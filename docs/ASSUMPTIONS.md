@@ -106,3 +106,8 @@ Everything here is **not** in the client brief and was chosen by me. Each item i
 - **ASSUMPTION** — Skipped (reported per row, never fatal): invalid/missing name or phone, duplicate lead id or phone within the file, a (portal, lead id) already imported, a phone on the opt-out register, a phone that already has an open lead. Unknown model/variant/city/showroom or a bad email are warnings only: the row is imported and the raw value is kept in the lead's message.
 - **ASSUMPTION** — Showroom for an imported row: CSV showroom (slug/name) → the admin's default showroom → first showroom in the row's city → none. Limits: 2,000 rows and 1 MB per file. Row numbers are spreadsheet-style (header = row 1).
 - **ASSUMPTION** — Well-known portal names are canonicalised (`cardekho` → `CarDekho`) so re-imports dedupe on the same (portalName, externalRef).
+
+## Missed-SLA escalation
+- **ASSUMPTION** — A NEW lead with no first contact 5 minutes after creation is reassigned once to the next-best consultant (never the same person; falls back to the lead desk admin) and the lead desk gets an SMS alert (mock).
+- **ASSUMPTION** — At 10 minutes, if still not contacted, the lead desk is alerted a second time; there is no further reassignment.
+- **ASSUMPTION** — The sweep runs on staff inbox polls (at most every 20 s per server process) and on `GET /api/cron/escalate` with `Authorization: Bearer $CRON_SECRET` for an external scheduler.

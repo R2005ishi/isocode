@@ -190,6 +190,8 @@ export type LeadListItem = {
   optedOut: boolean;
   /** Third-party portal for PORTAL (imported) leads, e.g. "CarDekho". */
   portalName?: string | null;
+  /** 0 none, 1 reassigned after missing the 5-min SLA, 2 lead desk alerted again. */
+  escalationLevel?: number;
 };
 
 export type LeadActivityDto = {

@@ -33,7 +33,7 @@ import {
 } from "@/types/contracts";
 import { api } from "../api";
 import { SLA_LABEL, SOURCE_LABEL, STATUS_LABEL, STATUS_ORDER, timeAgo } from "../labels";
-import { liveSla, SlaChip, useNow } from "../sla-chip";
+import { EscalatedBadge, liveSla, SlaChip, useNow } from "../sla-chip";
 import { EmptyState, ErrorState, PageHeader } from "../states";
 import { StatusBadge } from "./status-badge";
 
@@ -280,7 +280,10 @@ function LeadTable({
               onClick={() => router.push(`/inbox/${l.id}`)}
             >
               <TableCell className="py-3 pl-4">
-                <SlaChip lead={l} now={now} />
+                <div className="flex flex-col items-start gap-1">
+                  <SlaChip lead={l} now={now} />
+                  <EscalatedBadge level={l.escalationLevel} />
+                </div>
               </TableCell>
               <TableCell className="py-3">
                 <Link
@@ -352,7 +355,10 @@ function LeadCards({
                   {l.phoneMasked} · {timeAgo(l.createdAt, now)}
                 </p>
               </div>
-              <SlaChip lead={l} now={now} />
+              <div className="flex flex-col items-end gap-1">
+                <SlaChip lead={l} now={now} />
+                <EscalatedBadge level={l.escalationLevel} />
+              </div>
             </div>
             <p className="mt-2 truncate text-sm">
               {l.interest ?? <span className="text-muted-foreground">General enquiry</span>}

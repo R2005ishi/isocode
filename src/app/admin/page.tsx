@@ -70,7 +70,7 @@ export default async function AdminOverviewPage() {
               </p>
             )}
           </div>
-          <dl className="grid grid-cols-3 gap-3 border-t pt-4">
+          <dl className="grid grid-cols-2 gap-3 border-t pt-4 sm:grid-cols-4">
             <div>
               <dt className="text-xs text-muted-foreground">Waiting now</dt>
               <dd className="text-lg font-semibold">{o.waitingNow}</dd>
@@ -80,6 +80,10 @@ export default async function AdminOverviewPage() {
               <dd className={cn("text-lg font-semibold", o.overdueNow > 0 && "text-red-700 dark:text-red-400")}>
                 {o.overdueNow}
               </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted-foreground">Auto-escalated</dt>
+              <dd className="text-lg font-semibold">{o.escalated}</dd>
             </div>
             <div>
               <dt className="text-xs text-muted-foreground">Median first reply</dt>

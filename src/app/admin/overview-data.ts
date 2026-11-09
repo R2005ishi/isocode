@@ -16,6 +16,8 @@ export type SlaOverview = {
   pct: number | null;
   waitingNow: number;
   overdueNow: number;
+  /** Leads auto-escalated for missing the 5-minute target in the window. */
+  escalated: number;
   medianResponseMs: number | null;
 };
 
@@ -31,7 +33,7 @@ export async function getSlaOverview(now = new Date(), windowDays = 30): Promise
   const since = new Date(now.getTime() - windowDays * 86_400_000);
   const leads = await db.lead.findMany({
     where: { createdAt: { gte: since } },
-    select: { createdAt: true, firstContactAt: true, status: true },
+    select: { createdAt: true, firstContactAt: true, status: true, escalationLevel: true },
   });
 
   const days: SlaDay[] = [];
@@ -47,8 +49,10 @@ export async function getSlaOverview(now = new Date(), windowDays = 30): Promise
 
   let waitingNow = 0;
   let overdueNow = 0;
+  let escalated = 0;
   const responses: number[] = [];
   for (const l of leads) {
+    if (l.escalationLevel > 0) escalated++;
     const state = slaState(l.createdAt, l.firstContactAt, now);
     const closed = l.status === "WON" || l.status === "LOST";
     if (state === "GREEN" || state === "AMBER") {
@@ -79,6 +83,7 @@ export async function getSlaOverview(now = new Date(), windowDays = 30): Promise
     pct: decided ? Math.round((met / decided) * 1000) / 10 : null,
     waitingNow,
     overdueNow,
+    escalated,
     medianResponseMs,
   };
 }

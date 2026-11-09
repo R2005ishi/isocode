@@ -290,6 +290,9 @@ model Lead {
   optedOutAt        DateTime?
   createdAt         DateTime    @default(now())
   firstContactAt    DateTime?
+  /// 0 = not escalated; 1 = reassigned after missing the 5-min SLA; 2 = lead desk alerted again.
+  escalationLevel   Int         @default(0)
+  escalatedAt       DateTime?
   updatedAt         DateTime    @updatedAt
   /// Third-party portal name for imported leads, e.g. "CarDekho".
   portalName        String?
@@ -306,6 +309,7 @@ model Lead {
 
   @@unique([portalName, externalRef])
   @@index([assignedToId, status])
+  @@index([status, firstContactAt, escalationLevel])
   @@index([phone])
 }
 

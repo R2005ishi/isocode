@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlarmClockIcon, CircleAlertIcon, CircleCheckIcon, HourglassIcon, TimerIcon } from "lucide-react";
+import { AlarmClockIcon, CircleAlertIcon, CircleCheckIcon, HourglassIcon, TimerIcon, SirenIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { slaRemainingMs, slaState } from "@/server/services/sla";
 import type { SlaState } from "@/types/contracts";
@@ -103,6 +103,24 @@ export function SlaChip({
       <Icon className="size-3.5" aria-hidden />
       <span className="sr-only">{A11Y[state]}: </span>
       {slaText(state, lead, now)}
+    </span>
+  );
+}
+
+/** Shown beside the SLA chip once a lead has been escalated for missing the 5-minute target. */
+export function EscalatedBadge({ level, className }: { level?: number; className?: string }) {
+  if (!level) return null;
+  const label = level >= 2 ? "Escalated · desk alerted" : "Escalated · reassigned";
+  return (
+    <span
+      className={cn(
+        "inline-flex h-6 shrink-0 items-center gap-1 rounded-full border border-red-600/25 bg-red-50 px-2 text-xs font-medium whitespace-nowrap text-red-800 dark:bg-red-950/40 dark:text-red-300",
+        className,
+      )}
+      title="Missed the 5-minute call target and was escalated automatically"
+    >
+      <SirenIcon className="size-3.5" aria-hidden />
+      {label}
     </span>
   );
 }

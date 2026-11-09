@@ -46,14 +46,25 @@ export function pickConsultant(
  * Assigns a lead inside the caller's transaction. Returns the assignee, or null if there is
  * no active consultant or admin at all (lead stays unassigned).
  */
+export type AssignOptions = {
+  /** Never pick these users (e.g. the consultant who just missed the SLA). */
+  excludeUserIds?: string[];
+  /** Activity type written to the lead timeline (default ASSIGNED). */
+  activityType?: "ASSIGNED" | "REASSIGNED";
+  /** Builds the timeline note from the new assignee's name. */
+  note?: (assigneeName: string) => string;
+};
+
 export async function assignLead(
   tx: Prisma.TransactionClient,
   leadId: string,
   showroomId: string | null,
   modelId?: string | null,
+  opts: AssignOptions = {},
 ): Promise<{ id: string; name: string } | null> {
+  const exclude = opts.excludeUserIds ?? [];
   const consultants = await tx.user.findMany({
-    where: { role: "CONSULTANT", isActive: true },
+    where: { role: "CONSULTANT", isActive: true, ...(exclude.length ? { id: { notIn: exclude } } : {}) },
     select: {
       id: true,
       name: true,
@@ -82,7 +93,7 @@ export async function assignLead(
     assignee = { id: c.id, name: c.name };
   } else {
     assignee = await tx.user.findFirst({
-      where: { role: "ADMIN", isActive: true },
+      where: { role: "ADMIN", isActive: true, ...(exclude.length ? { id: { notIn: exclude } } : {}) },
       orderBy: { createdAt: "asc" },
       select: { id: true, name: true },
     });
@@ -93,7 +104,11 @@ export async function assignLead(
   await tx.lead.update({ where: { id: leadId }, data: { assignedToId: assignee.id } });
   await tx.user.update({ where: { id: assignee.id }, data: { lastAssignedAt: now } });
   await tx.leadActivity.create({
-    data: { leadId, type: "ASSIGNED", note: `Auto-assigned to ${assignee.name}` },
+    data: {
+      leadId,
+      type: opts.activityType ?? "ASSIGNED",
+      note: opts.note ? opts.note(assignee.name) : `Auto-assigned to ${assignee.name}`,
+    },
   });
   return assignee;
 }
