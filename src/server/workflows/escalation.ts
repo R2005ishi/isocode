@@ -133,6 +133,8 @@ let running: Promise<unknown> | null = null;
 
 /** Throttled, failure-tolerant sweep for request paths: escalation must never break the inbox. */
 export async function maybeRunEscalations(now: Date = new Date()): Promise<void> {
+  // Tests that assert fixed lead ownership turn the poll trigger off; the cron route still works.
+  if (process.env.ESCALATION_ON_POLL === "off") return;
   if (running || now.getTime() - lastSweep < SWEEP_EVERY_MS) return;
   lastSweep = now.getTime();
   running = runEscalations(now)

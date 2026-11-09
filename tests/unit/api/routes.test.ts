@@ -27,6 +27,7 @@ import * as price from "@/app/api/price/route";
 import * as priceBand from "@/app/api/used-cars/[id]/price-band/route";
 import * as slots from "@/app/api/slots/route";
 import * as testDrives from "@/app/api/test-drives/route";
+import * as cronEscalate from "@/app/api/cron/escalate/route";
 
 const BASE = "http://localhost/api";
 let ipCounter = 0;
@@ -727,5 +728,68 @@ describe("rate limiting", () => {
       undefined,
     );
     expect(other.status).toBe(200);
+  });
+});
+
+describe("missed-SLA escalation", () => {
+  const cron = (auth?: string) =>
+    cronEscalate.GET(
+      new Request(`${BASE}/cron/escalate`, { headers: auth ? { authorization: auth } : {} }),
+      undefined,
+    );
+
+  it("rejects calls without the cron secret", async () => {
+    expect((await cron()).status).toBe(401);
+    expect((await cron("Bearer wrong")).status).toBe(401);
+  });
+
+  it("reassigns an uncontacted lead after 5 min to someone else, then alerts the desk at 10 min, once each", async () => {
+    signInAs(null);
+    const created = await json(
+      await leads.POST(
+        req("/leads", {
+          method: "POST",
+          body: { name: "Escalation Case", phone: "9800000777", consent: true, message: "Need a call" },
+        }),
+        undefined,
+      ),
+    );
+    expect(created.status).toBe(201);
+    const before = await leadByPhone("9800000777");
+    expect(before.assignedToId).not.toBeNull();
+
+    // Still inside the window: nothing happens.
+    await cron("Bearer test-cron-secret");
+    expect((await leadByPhone("9800000777")).escalationLevel).toBe(0);
+
+    await db.lead.update({ where: { id: before.id }, data: { createdAt: new Date(Date.now() - 6 * 60_000) } });
+    expect((await cron("Bearer test-cron-secret")).status).toBe(200);
+    const after = await leadByPhone("9800000777");
+    expect(after.escalationLevel).toBe(1);
+    expect(after.assignedToId).not.toBe(before.assignedToId);
+    const note = await db.leadActivity.findFirstOrThrow({
+      where: { leadId: before.id, type: "REASSIGNED" },
+    });
+    expect(note.note).toMatch(/Not contacted within 5 minutes/);
+
+    // A second sweep inside the same window does nothing more.
+    await cron("Bearer test-cron-secret");
+    expect((await leadByPhone("9800000777")).assignedToId).toBe(after.assignedToId);
+
+    await db.lead.update({ where: { id: before.id }, data: { createdAt: new Date(Date.now() - 11 * 60_000) } });
+    await cron("Bearer test-cron-secret");
+    const final = await leadByPhone("9800000777");
+    expect(final.escalationLevel).toBe(2);
+    expect(final.assignedToId).toBe(after.assignedToId);
+  });
+
+  it("never escalates a lead once it has been contacted", async () => {
+    const l = await leadByPhone("9800000777");
+    await db.lead.update({
+      where: { id: l.id },
+      data: { escalationLevel: 0, firstContactAt: new Date(), createdAt: new Date(Date.now() - 30 * 60_000) },
+    });
+    await cron("Bearer test-cron-secret");
+    expect((await leadByPhone("9800000777")).escalationLevel).toBe(0);
   });
 });

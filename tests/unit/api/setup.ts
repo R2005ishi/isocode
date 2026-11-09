@@ -33,6 +33,9 @@ process.env.DATABASE_URL = url;
 process.env.AUTH_SECRET ??= "test-secret";
 // Force the AI mock provider: tests never call the real LLM.
 process.env.ANTHROPIC_API_KEY = "";
+// Seeded leads are already overdue; keep ownership stable unless a test runs the sweep itself.
+process.env.ESCALATION_ON_POLL = "off";
+process.env.CRON_SECRET = "test-cron-secret";
 
 /** Applies migrations and runs the idempotent seed against the test DB. */
 export function resetTestDb() {
