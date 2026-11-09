@@ -80,7 +80,7 @@ End-to-end (Playwright, desktop and phone viewports): `npm run e2e`. It builds a
 Steps:
 
 1. Create a Neon project and copy its **pooled** connection string.
-2. Import the GitHub repo in Vercel and add the environment variables from section 3. `vercel.json` pins the functions to Singapore (`sin1`), next to the database; keeping app and database in the same region matters more for page speed than anything else here.
+2. Import the GitHub repo in Vercel and add the environment variables from section 3. In Vercel → Settings → Functions, set the Function Region to Singapore (`sin1`), next to the database; keeping app and database in the same region matters more for page speed than anything else here.
 3. Deploy. Vercel runs `npm run vercel-build`, i.e. `prisma migrate deploy && next build`, so the schema is always current.
 4. Seed once from your machine against the Neon database:
 
