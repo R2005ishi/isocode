@@ -6,6 +6,7 @@ import {
   CarIcon,
   FileUpIcon,
   ImageIcon,
+  SparklesIcon,
   InboxIcon,
   TableIcon,
   TagIcon,
@@ -34,6 +35,7 @@ const LINKS = [
   { href: "/admin/service", label: "Service bookings", desc: "Workshop bays and bookings", Icon: WrenchIcon },
   { href: "/admin/offers", label: "Offers", desc: "Model and dealership offers", Icon: TagIcon },
   { href: "/admin/banners", label: "Banners", desc: "Home page promotions", Icon: ImageIcon },
+  { href: "/admin/ai", label: "AI quality", desc: "Draft edits, guardrail catches, fallbacks", Icon: SparklesIcon },
 ];
 
 export default async function AdminOverviewPage() {

@@ -19,6 +19,7 @@ const ADMIN_TABS = [
   { href: "/admin/service", label: "Service" },
   { href: "/admin/offers", label: "Offers" },
   { href: "/admin/banners", label: "Banners" },
+  { href: "/admin/ai", label: "AI quality" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

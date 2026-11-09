@@ -111,3 +111,7 @@ Everything here is **not** in the client brief and was chosen by me. Each item i
 - **ASSUMPTION** — A NEW lead with no first contact 5 minutes after creation is reassigned once to the next-best consultant (never the same person; falls back to the lead desk admin) and the lead desk gets an SMS alert (mock).
 - **ASSUMPTION** — At 10 minutes, if still not contacted, the lead desk is alerted a second time; there is no further reassignment.
 - **ASSUMPTION** — The sweep runs on staff inbox polls (at most every 20 s per server process) and on `GET /api/cron/escalate` with `Authorization: Bearer $CRON_SECRET` for an external scheduler.
+
+## AI quality page (/admin/ai)
+- **ASSUMPTION** — Edit size is the word-level edit distance between the draft and the text sent, divided by the draft's word count; ≤ 25 % is a "light edit", more is "rewritten".
+- **ASSUMPTION** — The seeded AI draft history (8 drafts) is invented sample data, including deliberately wrong AI attempts (discount wording, unverified prices, a timeout).

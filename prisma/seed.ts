@@ -1193,6 +1193,7 @@ async function main() {
     },
   });
 
+  await seedAiHistory(leadIds);
   await seedCms();
 
   const counts = {
@@ -1210,6 +1211,116 @@ async function main() {
 
 // ─── CMS: offers & banners (ASSUMPTION: invented sample promotions) ─────────
 // Upserted on fixed ids so re-running never duplicates; dates are relative to "now" so they stay live.
+/**
+ * Sample AI draft history so /admin/ai shows realistic behaviour, including the AI being wrong.
+ * ASSUMPTION: invented examples; amounts match seeded price rows or are deliberately wrong.
+ */
+async function seedAiHistory(leadIds: Record<string, string>) {
+  const H = 60 * MIN;
+  const ok = (text: string) => ({ text, problem: null });
+  const bad = (text: string, problem: string) => ({ text, problem });
+  const drafts: {
+    phone: string;
+    hoursAgo: number;
+    status: "OK" | "FALLBACK" | "BLOCKED";
+    reason?: string;
+    text: string;
+    attempts: { text: string; problem: string | null }[];
+    sent?: string;
+  }[] = [
+    {
+      phone: "9800000031",
+      hoursAgo: 200,
+      status: "OK",
+      text: "Hi Rohan, thanks for your interest in the Model H ZX Automatic. I can show you the car at Gomti Nagar this Saturday at 11 am or 3 pm. Which suits you?",
+      attempts: [ok("…")],
+      sent: "Hi Rohan, thanks for your interest in the Model H ZX Automatic. I can show you the car at Gomti Nagar this Saturday at 11 am or 3 pm. Which suits you?",
+    },
+    {
+      phone: "9800000032",
+      hoursAgo: 170,
+      status: "OK",
+      text: "Hi Sunita, thank you for asking about the Model S LX. I have free test-drive slots tomorrow at 10:30 am and 4 pm. Shall I book one for you?",
+      attempts: [ok("…")],
+      sent: "Hi Sunita ji, thank you for asking about the Model S LX CNG. I have free test-drive slots tomorrow at 10:30 am and 4 pm. Shall I book one for you?",
+    },
+    {
+      phone: "9800000033",
+      hoursAgo: 150,
+      status: "OK",
+      text: "Hi Arjun, thanks for your enquiry about the Model T. When would be a good time to call you about variants and the on-road price in Lucknow?",
+      attempts: [bad("Hi Arjun, we have a special festive discount on the Model T this week!", "discount_language"), ok("…")],
+      sent: "Hi Arjun, thanks for your enquiry about the Model T. When would be a good time to call you about variants and the on-road price in Lucknow?",
+    },
+    {
+      phone: "9800000036",
+      hoursAgo: 120,
+      status: "BLOCKED",
+      reason: "discount_language",
+      text: "Hi Priya, thank you for contacting Brand X. I will call you shortly to understand what you are looking for. — Asha, Gomti Nagar",
+      attempts: [
+        bad("Hi Priya, I can get you ₹20,000 off and free accessories if you book today!", "discount_language"),
+        bad("Hi Priya, ask me about our cashback offer on the Model C.", "discount_language"),
+      ],
+      sent: "Hi Priya, thank you for contacting Brand X. I'll call you in the next few minutes to understand what you're looking for, and share the on-road price for Kanpur. — Asha",
+    },
+    {
+      phone: "9800000037",
+      hoursAgo: 96,
+      status: "BLOCKED",
+      reason: "unverified_price",
+      text: "Hi Aman, thank you for your interest in the Model C. I will call you shortly with the on-road price for your city. — Ravi",
+      attempts: [
+        bad("Hi Aman, the Model C VX will cost about ₹11,50,000 on-road.", "unverified_price"),
+        bad("Hi Aman, the on-road price is roughly ₹11.5 lakh.", "unverified_price"),
+      ],
+    },
+    {
+      phone: "9800000038",
+      hoursAgo: 72,
+      status: "FALLBACK",
+      reason: "timeout",
+      text: "Hi Deepak, thank you for contacting Brand X. I will call you shortly. — Pooja, Hazratganj",
+      attempts: [],
+      sent: "Hi Deepak, thank you for contacting Brand X. I will call you shortly. — Pooja, Hazratganj",
+    },
+    {
+      phone: "9800000040",
+      hoursAgo: 30,
+      status: "OK",
+      text: "Hi Sanjay, thanks for asking about the certified Model C VX Diesel (UC-1182). It is available to see at our used-car yard. Would tomorrow at 12 pm work?",
+      attempts: [ok("…")],
+      sent: "Hi Sanjay, thanks for asking about the certified Model C VX Diesel (UC-1182). It's available at our used-car yard — would tomorrow at 12 pm work?",
+    },
+    {
+      phone: "9800000041",
+      hoursAgo: 6,
+      status: "OK",
+      text: "Hi Meera, thank you for your interest in the Model H. I have test-drive slots today at 5 pm and tomorrow at 11 am. Which would you prefer?",
+      attempts: [ok("…")],
+    },
+  ];
+  for (const d of drafts) {
+    const leadId = leadIds[d.phone];
+    if (!leadId) continue;
+    const createdAt = ago(d.hoursAgo * H);
+    await db.aiOutput.create({
+      data: {
+        leadId,
+        kind: "DRAFT",
+        input: { leadId, locale: "en", seeded: true },
+        output: { text: d.text, attempts: d.attempts.map((a) => (a.text === "…" ? { ...a, text: d.text } : a)) },
+        model: d.status === "OK" ? "seed" : "template",
+        status: d.status,
+        reason: d.reason ?? null,
+        editedText: d.sent ?? null,
+        sentAt: d.sent ? new Date(createdAt.getTime() + 4 * MIN) : null,
+        createdAt,
+      },
+    });
+  }
+}
+
 async function seedCms() {
   const modelH = await db.model.findUnique({ where: { slug: "model-h" }, select: { id: true } });
   const offers = [
