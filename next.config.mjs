@@ -1,4 +1,3 @@
-import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
 // next-intl without locale-prefixed routes: locale comes from the `NEXT_LOCALE` cookie.
@@ -29,7 +28,8 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
 ];
 
-const nextConfig: NextConfig = {
+/** @type {import("next").NextConfig} */
+const nextConfig = {
   // Lets parallel dev servers use separate build folders (NEXT_DIST_DIR=.next-d etc.).
   distDir: process.env.NEXT_DIST_DIR || ".next",
   // Agent B owns the `headers()` section below (security headers).
