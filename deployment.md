@@ -1,7 +1,7 @@
 # Deployment — Brand X Dealer Platform (Company A, Lucknow)
 
 - **Repository:** https://github.com/R2005ishi/isocode
-- **Live app:** _added after deployment_
+- **Live app:** https://isocode-pi.vercel.app
 
 ## 1. Run it locally
 
@@ -72,15 +72,15 @@ End-to-end (Playwright, desktop and phone viewports): `npm run e2e`. It builds a
 
 | Part | Service | Why |
 |---|---|---|
-| Web app + API | **Vercel** (Next.js 15, Node 22) | Server rendering for SEO and fast 4G loads; one deploy for site, staff app and API |
-| Database | **Neon** Postgres (serverless) | Managed Postgres; Prisma migrations apply on every deploy |
+| Web app + API | **Vercel** (Next.js 15, Node 22, region `sin1` Singapore) | Server rendering for SEO and fast 4G loads; one deploy for site, staff app and API |
+| Database | **Neon** Postgres (serverless, `ap-southeast-1` Singapore) | Managed Postgres; Prisma migrations apply on every deploy |
 | AI | Anthropic API (optional) | Without a key the app uses safe templates and says so |
 | Messages, payments, DMS | Mocked | Out of scope per the brief; WhatsApp/SMS are written to the `MessageLog` table |
 
 Steps:
 
 1. Create a Neon project and copy its **pooled** connection string.
-2. Import the GitHub repo in Vercel and add the environment variables from section 3.
+2. Import the GitHub repo in Vercel and add the environment variables from section 3. `vercel.json` pins the functions to Singapore (`sin1`), next to the database; keeping app and database in the same region matters more for page speed than anything else here.
 3. Deploy. Vercel runs `npm run vercel-build`, i.e. `prisma migrate deploy && next build`, so the schema is always current.
 4. Seed once from your machine against the Neon database:
 
@@ -96,7 +96,7 @@ Steps:
 |---|---|---|
 | `DATABASE_URL` | Yes | PostgreSQL connection string |
 | `AUTH_SECRET` | Yes | Signs staff sign-in sessions (Auth.js) |
-| `NEXT_PUBLIC_SITE_URL` | Yes | Public base URL, used for canonical links, sitemap and robots |
+| `NEXT_PUBLIC_SITE_URL` | Recommended | Public base URL for canonical links, sitemap and robots. On Vercel it falls back to the project's production domain |
 | `ANTHROPIC_API_KEY` | No | Enables AI buyer summaries and first-reply drafts; empty → template fallback |
 | `AI_MODEL` | No | Model id; defaults to `claude-sonnet-5-5` |
 | `CRON_SECRET` | No | Enables the scheduled escalation endpoint; unset → endpoint returns 503 |
