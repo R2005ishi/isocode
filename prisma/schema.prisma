@@ -1,0 +1,484 @@
+// Brand X Dealer Platform — data contract.
+// Every agent reads this; only the orchestrator changes it.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  BUYER
+  CONSULTANT
+  ADMIN
+  USED_CAR_MANAGER
+}
+
+enum Fuel {
+  PETROL
+  DIESEL
+  CNG
+  ELECTRIC
+  HYBRID
+}
+
+enum Transmission {
+  MANUAL
+  AUTOMATIC
+}
+
+enum UsedCarStatus {
+  AVAILABLE
+  BOOKED
+  SOLD
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum LeadSource {
+  WEB
+  PORTAL
+  SOCIAL
+  WALKIN
+  TEST_DRIVE
+  TRADE_IN
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  TEST_DRIVE_BOOKED
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum Locale {
+  en
+  hi
+}
+
+enum AiKind {
+  SUMMARY
+  DRAFT
+  PRICE_BAND
+}
+
+enum AiStatus {
+  OK
+  FALLBACK
+  BLOCKED
+}
+
+enum MessageChannel {
+  WHATSAPP
+  SMS
+  EMAIL
+}
+
+model User {
+  id                String    @id @default(cuid())
+  name              String
+  email             String    @unique
+  passwordHash      String
+  role              Role      @default(BUYER)
+  phone             String?
+  showroomId        String?
+  showroom          Showroom? @relation(fields: [showroomId], references: [id])
+  /// Used to tie-break auto-assignment (oldest last assignment wins).
+  lastAssignedAt    DateTime?
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  /// Model ids this consultant specialises in. Auto-assignment prefers a matching consultant.
+  specialtyModelIds String[]  @default([])
+
+  assignedLeads Lead[]         @relation("AssignedLeads")
+  activities    LeadActivity[]
+  leadImports   LeadImport[]
+}
+
+model City {
+  id     String           @id @default(cuid())
+  name   String
+  nameHi String?
+  slug   String           @unique
+  prices PriceComponent[]
+}
+
+model Showroom {
+  id        String  @id @default(cuid())
+  name      String
+  slug      String  @unique
+  address   String
+  cityId    String?
+  phone     String?
+  /// Opening hour, 24h clock, IST (ASSUMPTION: 10).
+  openHour  Int     @default(10)
+  /// Closing hour, 24h clock, IST (ASSUMPTION: 19).
+  closeHour Int     @default(19)
+
+  users     User[]
+  demoCars  DemoCar[]
+  bookings  TestDriveBooking[]
+  leads     Lead[]
+  workshops Workshop[]
+}
+
+model Workshop {
+  id              String           @id @default(cuid())
+  name            String
+  slug            String           @unique
+  showroomId      String?
+  showroom        Showroom?        @relation(fields: [showroomId], references: [id])
+  /// Number of service bays (capacity per slot).
+  bays            Int              @default(4)
+  /// ASSUMPTION: workshop hours 09:00–18:00 IST.
+  openHour        Int              @default(9)
+  closeHour       Int              @default(18)
+  isActive        Boolean          @default(true)
+  serviceBookings ServiceBooking[]
+}
+
+model Model {
+  id            String    @id @default(cuid())
+  name          String
+  slug          String    @unique
+  bodyType      String
+  description   String
+  descriptionHi String?
+  heroImage     String
+  gallery       String[]
+  isActive      Boolean   @default(true)
+  sortOrder     Int       @default(0)
+  variants      Variant[]
+  leads         Lead[]
+  offers        Offer[]
+}
+
+model Variant {
+  id              String       @id @default(cuid())
+  modelId         String
+  model           Model        @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  name            String
+  slug            String
+  /// Internal stock / catalogue code from the brief, e.g. NEW-H-02.
+  code            String?      @unique
+  fuel            Fuel
+  transmission    Transmission
+  /// Ex-showroom price in whole rupees.
+  exShowroomPrice Int
+  /// { engine, power, torque, mileage, seats, bootLitres, ... }
+  specs           Json
+  /// [{ name, nameHi?, hex }]
+  colours         Json
+  isActive        Boolean      @default(true)
+
+  prices   PriceComponent[]
+  demoCars DemoCar[]
+  leads    Lead[]
+
+  @@unique([modelId, slug])
+}
+
+/// Admin-maintained on-road price components per variant per city.
+/// This table is the ONLY source of prices. AI never computes or changes them.
+model PriceComponent {
+  id              String   @id @default(cuid())
+  variantId       String
+  variant         Variant  @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  cityId          String
+  city            City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  /// Road tax as a percentage of ex-showroom, e.g. 10 = 10 %.
+  roadTaxPct      Decimal  @db.Decimal(5, 2)
+  registrationFee Int
+  insurance       Int
+  accessoriesPack Int
+  otherCharges    Int      @default(0)
+  validUntil      DateTime
+  updatedAt       DateTime @updatedAt
+  updatedById     String?
+
+  @@unique([variantId, cityId])
+}
+
+model UsedCar {
+  id           String        @id @default(cuid())
+  stockId      String        @unique
+  slug         String        @unique
+  modelName    String
+  variantName  String
+  fuel         Fuel
+  transmission Transmission  @default(MANUAL)
+  year         Int
+  km           Int
+  owners       Int
+  /// Asking price in whole rupees.
+  price        Int
+  status       UsedCarStatus @default(AVAILABLE)
+  /// Full registration number. NEVER sent to non-admin clients — use the masked form.
+  registration String
+  colour       String?
+  images       String[]
+  /// [{ item, result: "OK"|"ATTENTION"|"REPLACED", note? }]
+  inspection   Json
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  leads        Lead[]
+}
+
+model DemoCar {
+  id         String             @id @default(cuid())
+  showroomId String
+  showroom   Showroom           @relation(fields: [showroomId], references: [id], onDelete: Cascade)
+  variantId  String
+  variant    Variant            @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  label      String
+  isActive   Boolean            @default(true)
+  bookings   TestDriveBooking[]
+}
+
+model TestDriveBooking {
+  id         String        @id @default(cuid())
+  /// Short human-friendly reference shown to the buyer, e.g. TD-7K2Q9.
+  reference  String        @unique
+  demoCarId  String
+  demoCar    DemoCar       @relation(fields: [demoCarId], references: [id], onDelete: Cascade)
+  showroomId String
+  showroom   Showroom      @relation(fields: [showroomId], references: [id], onDelete: Cascade)
+  slotStart  DateTime
+  slotEnd    DateTime
+  leadId     String
+  lead       Lead          @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  status     BookingStatus @default(CONFIRMED)
+  createdAt  DateTime      @default(now())
+
+  /// Slot integrity is enforced by the database, not only by app code.
+  @@unique([demoCarId, slotStart])
+}
+
+model Lead {
+  id                String      @id @default(cuid())
+  name              String
+  phone             String
+  email             String?
+  source            LeadSource
+  locale            Locale      @default(en)
+  interestModelId   String?
+  interestModel     Model?      @relation(fields: [interestModelId], references: [id])
+  interestVariantId String?
+  interestVariant   Variant?    @relation(fields: [interestVariantId], references: [id])
+  interestUsedCarId String?
+  interestUsedCar   UsedCar?    @relation(fields: [interestUsedCarId], references: [id])
+  showroomId        String?
+  showroom          Showroom?   @relation(fields: [showroomId], references: [id])
+  citySlug          String?
+  message           String?
+  assignedToId      String?
+  assignedTo        User?       @relation("AssignedLeads", fields: [assignedToId], references: [id])
+  status            LeadStatus  @default(NEW)
+  /// DPDP Act 2023: explicit consent, captured unticked-by-default on the form.
+  consent           Boolean
+  consentAt         DateTime?
+  optedOut          Boolean     @default(false)
+  optedOutAt        DateTime?
+  createdAt         DateTime    @default(now())
+  firstContactAt    DateTime?
+  updatedAt         DateTime    @updatedAt
+  /// Third-party portal name for imported leads, e.g. "CarDekho".
+  portalName        String?
+  /// The portal's own lead id; used to skip duplicates on re-import.
+  externalRef       String?
+  importId          String?
+  import            LeadImport? @relation(fields: [importId], references: [id], onDelete: SetNull)
+
+  activities LeadActivity[]
+  bookings   TestDriveBooking[]
+  aiOutputs  AiOutput[]
+  messages   MessageLog[]
+  tradeIn    TradeInRequest?
+
+  @@unique([portalName, externalRef])
+  @@index([assignedToId, status])
+  @@index([phone])
+}
+
+model LeadActivity {
+  id        String   @id @default(cuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  /// CREATED | ASSIGNED | REASSIGNED | STATUS_CHANGED | CONTACTED | NOTE | MESSAGE_SENT | TEST_DRIVE_BOOKED | OPTED_OUT
+  type      String
+  note      String
+  createdAt DateTime @default(now())
+
+  @@index([leadId, createdAt])
+}
+
+model AiOutput {
+  id         String    @id @default(cuid())
+  leadId     String?
+  lead       Lead?     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  kind       AiKind
+  input      Json
+  output     Json
+  model      String
+  status     AiStatus
+  /// Why it fell back or was blocked, e.g. "discount_language", "timeout".
+  reason     String?
+  /// Text actually sent after human review — lets us measure how much consultants edit.
+  editedText String?
+  sentAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([leadId, kind, createdAt])
+}
+
+/// Mock outbound messaging (WhatsApp/SMS/email). Nothing is actually sent.
+model MessageLog {
+  id        String         @id @default(cuid())
+  leadId    String?
+  lead      Lead?          @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  channel   MessageChannel
+  to        String
+  template  String
+  body      String
+  createdAt DateTime       @default(now())
+}
+
+/// DPDP opt-out register by phone; honoured by every future send.
+model OptOut {
+  id        String   @id @default(cuid())
+  phone     String   @unique
+  createdAt DateTime @default(now())
+}
+
+/// Optional depth: historical used-car sales for the manager-only price band.
+model PastSale {
+  id        String   @id @default(cuid())
+  modelName String
+  year      Int
+  km        Int
+  price     Int
+  soldAt    DateTime
+}
+
+enum ServiceBookingStatus {
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+/// Workshop service booking. Capacity: at most `Workshop.bays` CONFIRMED bookings per slot,
+/// enforced inside a serializable transaction.
+model ServiceBooking {
+  id           String               @id @default(cuid())
+  /// e.g. SV-7K2Q9
+  reference    String               @unique
+  workshopId   String
+  workshop     Workshop             @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  slotStart    DateTime
+  slotEnd      DateTime
+  name         String
+  phone        String
+  email        String?
+  registration String
+  modelName    String
+  /// e.g. PERIODIC | REPAIR | ACCIDENT | OTHER (validated in app code)
+  serviceType  String
+  odometerKm   Int?
+  notes        String?
+  consent      Boolean
+  consentAt    DateTime?
+  status       ServiceBookingStatus @default(CONFIRMED)
+  createdAt    DateTime             @default(now())
+
+  @@index([workshopId, slotStart, status])
+}
+
+/// Trade-in details attached to a TRADE_IN lead (one per lead).
+model TradeInRequest {
+  id            String   @id @default(cuid())
+  leadId        String   @unique
+  lead          Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  make          String
+  modelName     String
+  variantName   String?
+  year          Int
+  km            Int
+  owners        Int      @default(1)
+  fuel          Fuel?
+  /// Full registration. Staff-only; never returned to buyers.
+  registration  String?
+  /// Customer's expected price in whole rupees (optional).
+  expectedPrice Int?
+  condition     String?
+  createdAt     DateTime @default(now())
+}
+
+/// One CSV upload of portal leads.
+model LeadImport {
+  id           String   @id @default(cuid())
+  fileName     String
+  portalName   String
+  importedById String?
+  importedBy   User?    @relation(fields: [importedById], references: [id], onDelete: SetNull)
+  totalRows    Int
+  createdCount Int
+  skippedCount Int
+  /// [{ row: number, reason: string }]
+  errors       Json
+  createdAt    DateTime @default(now())
+  leads        Lead[]
+}
+
+/// Admin-managed offers shown on the site (text only; never changes the price table).
+model Offer {
+  id         String   @id @default(cuid())
+  title      String
+  titleHi    String?
+  body       String
+  bodyHi     String?
+  /// null = applies to all models
+  modelId    String?
+  model      Model?   @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  validFrom  DateTime
+  validUntil DateTime
+  isActive   Boolean  @default(true)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([isActive, validUntil])
+}
+
+/// Admin-managed promotional banners.
+model Banner {
+  id         String    @id @default(cuid())
+  title      String
+  titleHi    String?
+  subtitle   String?
+  subtitleHi String?
+  /// Path under /public or https URL
+  image      String?
+  ctaLabel   String?
+  ctaLabelHi String?
+  /// Internal path, e.g. /cars/model-h
+  ctaHref    String?
+  /// HOME (validated in app code; more placements later)
+  placement  String    @default("HOME")
+  isActive   Boolean   @default(true)
+  sortOrder  Int       @default(0)
+  startsAt   DateTime?
+  endsAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}

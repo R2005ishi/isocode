@@ -1,0 +1,9 @@
+{
+  "heading": "Current offers",
+  "headingModel": "Offers on {model}",
+  "validRange": "Valid {from} – {until}",
+  "validUntil": "Valid till {date}",
+  "allModels": "All models",
+  "terms": "Subject to dealer terms. Offers do not change the on-road price shown, which comes from the dealer's price list.",
+  "bannersLabel": "Promotions"
+}

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="40 100 1120 560" role="img" aria-labelledby="t">
+<title id="t">Illustrative Sedan silhouette</title>
+<defs>
+<linearGradient id="paint" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a4a3e"/><stop offset="1" stop-color="#3c3029"/></linearGradient>
+<linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4b4540"/><stop offset=".55" stop-color="#1e1b19"/><stop offset="1" stop-color="#36302b"/></linearGradient>
+<linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".28"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<radialGradient id="rim" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#d9d3ca"/><stop offset="1" stop-color="#8d857b"/></radialGradient>
+<radialGradient id="floor" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#2b2622" stop-opacity=".38"/><stop offset="1" stop-color="#2b2622" stop-opacity="0"/></radialGradient>
+</defs>
+<ellipse cx="605.0" cy="509" rx="551.0" ry="26" fill="url(#floor)"/>
+<path d="M 1078.0 438.0 L 1083.6 391.9 Q 1086.0 372.0 1078.9 353.3 L 1078.0 351.0 Q 1070.0 330.0 1046.1 327.4 L 999.8 322.3 Q 960.0 318.0 927.0 295.4 L 889.5 269.9 Q 840.0 236.0 780.0 234.8 L 690.0 233.0 Q 640.0 232.0 597.4 258.2 L 534.1 297.1 Q 500.0 318.0 460.1 321.2 L 239.8 339.1 Q 180.0 344.0 154.0 362.0 L 152.7 362.9 Q 128.0 380.0 126.0 409.0 L 124.0 438.0 L 216.0 438 L 216.0 445.0 A 74 74 0 0 1 364.0 445.0 L 364.0 438 L 826.0 438 L 826.0 445.0 A 74 74 0 0 1 974.0 445.0 L 974.0 438 L 1078 438 Z" fill="url(#paint)"/>
+<polygon points="522,318 648,244 832,244 930,318" fill="url(#glass)"/>
+<rect x="731" y="240" width="18" height="82" fill="url(#paint)"/>
+<path d="M 1078.0 438.0 L 1083.6 391.9 Q 1086.0 372.0 1078.9 353.3 L 1078.0 351.0 Q 1070.0 330.0 1046.1 327.4 L 999.8 322.3 Q 960.0 318.0 927.0 295.4 L 889.5 269.9 Q 840.0 236.0 780.0 234.8 L 690.0 233.0 Q 640.0 232.0 597.4 258.2 L 534.1 297.1 Q 500.0 318.0 460.1 321.2 L 239.8 339.1 Q 180.0 344.0 154.0 362.0 L 152.7 362.9 Q 128.0 380.0 126.0 409.0 L 124.0 438.0 L 216.0 438 L 216.0 445.0 A 74 74 0 0 1 364.0 445.0 L 364.0 438 L 826.0 438 L 826.0 445.0 A 74 74 0 0 1 974.0 445.0 L 974.0 438 L 1078 438 Z" fill="url(#sheen)"/>
+<g stroke="#000" stroke-opacity=".22" stroke-width="2.5" fill="none"><line x1="740" y1="324" x2="744" y2="420"/><line x1="150" y1="386" x2="1080" y2="380" stroke="#fff" stroke-opacity=".25"/></g>
+<rect x="136" y="360" width="70" height="14" rx="7.0" fill="#f4efe6"/>
+<rect x="1048" y="334" width="18" height="30" rx="9.0" fill="#a23b25"/>
+<path d="M 218 445 A 72 72 0 0 1 362 445 Z" fill="#141210"/><circle cx="290" cy="445" r="60" fill="#1b1816"/><circle cx="290" cy="445" r="38.4" fill="url(#rim)"/><g stroke="#2a2522" stroke-width="5.4" stroke-linecap="round"><line x1="290.0" y1="445.0" x2="290.0" y2="409.0"/><line x1="290.0" y1="445.0" x2="324.2" y2="433.9"/><line x1="290.0" y1="445.0" x2="311.2" y2="474.1"/><line x1="290.0" y1="445.0" x2="268.8" y2="474.1"/><line x1="290.0" y1="445.0" x2="255.8" y2="433.9"/></g><circle cx="290" cy="445" r="7.2" fill="#8d857b"/><path d="M 828 445 A 72 72 0 0 1 972 445 Z" fill="#141210"/><circle cx="900" cy="445" r="60" fill="#1b1816"/><circle cx="900" cy="445" r="38.4" fill="url(#rim)"/><g stroke="#2a2522" stroke-width="5.4" stroke-linecap="round"><line x1="900.0" y1="445.0" x2="900.0" y2="409.0"/><line x1="900.0" y1="445.0" x2="934.2" y2="433.9"/><line x1="900.0" y1="445.0" x2="921.2" y2="474.1"/><line x1="900.0" y1="445.0" x2="878.8" y2="474.1"/><line x1="900.0" y1="445.0" x2="865.8" y2="433.9"/></g><circle cx="900" cy="445" r="7.2" fill="#8d857b"/>
+</svg>
